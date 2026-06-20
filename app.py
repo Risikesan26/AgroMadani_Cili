@@ -312,6 +312,25 @@ def generate_llama_advice_task():
 def api_data():
     return jsonify(state)
 
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
+    try:
+        data = request.get_json() or {}
+        message = data.get("message")
+        if not message:
+            return jsonify({"status": "error", "message": "No message provided"}), 400
+        
+        # Call the RAG pipeline to answer the question
+        from rag_pipeline import answer_question
+        answer = answer_question(message)
+        
+        return jsonify({"status": "success", "response": answer})
+    except Exception as e:
+        print(f"⚠️ RAG Pipeline Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route("/api/generate_advice", methods=["POST"])
 def api_generate_advice():
     if state["llm_loading"]:

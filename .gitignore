@@ -8,3 +8,5 @@ env/
 .idea/
 .vscode/
 .DS_Store
+.env
+faiss_index/
