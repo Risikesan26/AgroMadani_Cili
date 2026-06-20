@@ -718,6 +718,50 @@
         width: 60px;
       }
     }
+
+    /* Rover Control Panel */
+    .control-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 10px;
+    }
+    
+    .control-status {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .control-actions {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .btn-rover-start {
+      background: linear-gradient(135deg, var(--success), #238636) !important;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(26, 127, 55, 0.2);
+    }
+    
+    .btn-rover-start:hover {
+      background: linear-gradient(135deg, #2ea043, #238636) !important;
+      box-shadow: 0 6px 16px rgba(26, 127, 55, 0.3);
+    }
+    
+    .btn-rover-stop {
+      background: linear-gradient(135deg, var(--danger), #a41b23) !important;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(207, 34, 46, 0.2);
+    }
+    
+    .btn-rover-stop:hover {
+      background: linear-gradient(135deg, #e33b45, #a41b23) !important;
+      box-shadow: 0 6px 16px rgba(207, 34, 46, 0.3);
+    }
   </style>
 </head>
 <body>
@@ -742,9 +786,9 @@
   <!-- KPI Grid -->
   <div class="kpi-grid">
     <div class="kcard k-mq2">
-      <div class="klabel">MQ2 Gas Level</div>
-      <div class="kval"><span id="k-mq2">—</span><span class="kunit">ppm</span></div>
-      <span class="ktag" id="k-mq2-tag">—</span>
+      <div class="klabel">Estimated Ethylene Index</div>
+      <div class="kval"><span id="k-eth">—</span><span class="kunit">%</span></div>
+      <span class="ktag" id="k-eth-tag">—</span>
     </div>
     
     <div class="kcard k-temp">
@@ -783,31 +827,49 @@
   <!-- Tab 1: Live Feed & Sensors -->
   <div id="tab-live" class="tab-content active">
     <div class="tab-grid-2col">
-      <!-- Live Video Card -->
-      <div class="card" style="margin-bottom: 0;">
-        <div class="card-title">
-          <span>🎥 Live Crop Monitor Feed</span>
-          <span style="font-size: 12px; font-weight: 500; color: var(--text-muted);">
-            Last updated: <b id="last-update">—</b>
-          </span>
-        </div>
-        
-        <div class="camera-container">
-          <img id="camera-stream" src="" alt="Live crop video stream" style="display: none;">
-          <div id="camera-offline-overlay" class="camera-offline-overlay">
-            <div class="camera-icon">📷</div>
-            <div class="camera-overlay-title">USB Camera Offline</div>
-            <div class="camera-overlay-desc">Searching for video capture devices. Verify USB physical connections.</div>
+      <!-- Left Column: Video Feed & Controls -->
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+        <!-- Live Video Card -->
+        <div class="card" style="margin-bottom: 0;">
+          <div class="card-title">
+            <span>🎥 Live Crop Monitor Feed</span>
+            <span style="font-size: 12px; font-weight: 500; color: var(--text-muted);">
+              Last updated: <b id="last-update">—</b>
+            </span>
+          </div>
+          
+          <div class="camera-container">
+            <img id="camera-stream" src="" alt="Live crop video stream" style="display: none;">
+            <div id="camera-offline-overlay" class="camera-offline-overlay">
+              <div class="camera-icon">📷</div>
+              <div class="camera-overlay-title">USB Camera Offline</div>
+              <div class="camera-overlay-desc">Searching for video capture devices. Verify USB physical connections.</div>
+            </div>
+          </div>
+
+          <div class="camera-controls">
+            <div style="font-size: 13px; color: var(--text-muted);">
+              🤖 AI diagnostic tag: <strong id="ai-label-display" style="color: var(--primary);">Scanning...</strong>
+            </div>
+            <button class="btn btn-primary" onclick="downloadSnapshot()">
+              📸 Take Crop Snapshot
+            </button>
           </div>
         </div>
 
-        <div class="camera-controls">
-          <div style="font-size: 13px; color: var(--text-muted);">
-            🤖 AI diagnostic tag: <strong id="ai-label-display" style="color: var(--primary);">Scanning...</strong>
+        <!-- Rover Navigation Control Card -->
+        <div class="card" style="margin-bottom: 0;">
+          <div class="card-title">🎮 Rover Control Panel</div>
+          <div class="control-panel">
+            <div class="control-status">
+              <span>Status:</span> <strong id="rover-status" style="color: var(--text-muted);">Checking...</strong>
+            </div>
+            <div class="control-actions">
+              <button id="btn-start-rover" class="btn btn-primary btn-rover-start" style="flex: 1; justify-content: center; font-size: 14px; padding: 14px 20px;" onclick="toggleRover()">
+                🚀 Start Rover
+              </button>
+            </div>
           </div>
-          <button class="btn btn-primary" onclick="downloadSnapshot()">
-            📸 Take Crop Snapshot
-          </button>
         </div>
       </div>
 
@@ -834,11 +896,11 @@
           </div>
           
           <div class="detail-row">
-            <div class="detail-label">💨 MQ2 Gas Level</div>
+            <div class="detail-label">🧪 Estimated Ethylene Index</div>
             <div class="detail-value">
-              <span id="mq2-val">—</span>
+              <span id="eth-val">—</span>
               <div class="bar-container">
-                <div id="mq2-bar" class="bar-fill" style="width: 0%;"></div>
+                <div id="eth-bar" class="bar-fill" style="width: 0%;"></div>
               </div>
             </div>
           </div>
@@ -859,6 +921,33 @@
 
   <!-- Tab 2: Crop Advisory -->
   <div id="tab-advisory" class="tab-content">
+    <!-- Llama 3.2 (3B) LLM Advisor Card -->
+    <div class="card" style="margin-bottom: 24px; border: 1px solid rgba(27, 58, 39, 0.15); background: linear-gradient(135deg, #ffffff, #f7f9f7); box-shadow: 0 4px 20px rgba(27, 58, 39, 0.05);">
+      <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-direction: row;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 28px;">🤖</span>
+          <div>
+            <div style="font-size: 16px; font-weight: 700; color: var(--primary);">Llama 3.2 Agronomic Advisor</div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Local Edge AI (3B Quantized Model)</div>
+          </div>
+        </div>
+        <button id="btn-refresh-llm" class="btn btn-primary" onclick="triggerLlamaAdvice()" style="font-size: 12px; padding: 10px 16px; background-color: var(--primary); border: none; color: white; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600; transition: background 0.2s;">
+          <span>🔄</span> Refresh Llama Analysis
+        </button>
+      </div>
+      
+      <div class="advice-card" style="margin-top: 16px; background: rgba(27, 58, 39, 0.03); border: 1px dashed var(--border); min-height: 80px; display: flex; flex-direction: column; justify-content: center; padding: 16px; border-radius: 12px;">
+        <div id="llm-advice-content" class="advice-content" style="font-size: 14px; line-height: 1.6; color: var(--text);">
+          Click 'Refresh Llama Analysis' to generate real-time agronomic recommendations.
+        </div>
+        <div id="llm-advice-skeleton" style="display: none; flex-direction: column; gap: 8px; width: 100%;">
+          <div style="width: 100%; height: 12px; background: rgba(27, 58, 39, 0.08); border-radius: 4px; animation: pulse 1.5s infinite ease-in-out;"></div>
+          <div style="width: 85%; height: 12px; background: rgba(27, 58, 39, 0.08); border-radius: 4px; animation: pulse 1.5s infinite ease-in-out;"></div>
+          <div style="width: 90%; height: 12px; background: rgba(27, 58, 39, 0.08); border-radius: 4px; animation: pulse 1.5s infinite ease-in-out;"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="tab-grid-3col">
       <!-- Leaf Inspection Advisory -->
       <div class="card" style="margin-bottom: 0;">
@@ -966,6 +1055,25 @@ function switchTab(tabId) {
 
 let alertCount = 0;
 let cameraConnected = false;
+let roverInterval = null;
+let roverActive = false;
+
+function formatTime24h(isoString, includeSeconds = false) {
+  if (!isoString) return '—';
+  try {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return isoString;
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    if (includeSeconds) {
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    }
+    return `${hours}:${minutes}`;
+  } catch (e) {
+    return isoString;
+  }
+}
 
 async function fetchData() {
   try {
@@ -988,12 +1096,14 @@ function render(d) {
 
   // Update last-update time
   const lastUpdateEl = document.getElementById('last-update');
-  if (lastUpdateEl) lastUpdateEl.textContent = d.updated ?? '—';
+  if (lastUpdateEl) lastUpdateEl.textContent = formatTime24h(d.updated, true);
+
+  const eth = d.ethylene_index;
 
   // KPIs
   set('k-temp', fmt(temp));
   set('k-hum',  fmt(hum));
-  set('k-mq2',  fmt(mq2));
+  set('k-eth',  fmt(eth));
 
   // Set tags
   setTag('k-hum-tag', hum, [
@@ -1002,10 +1112,10 @@ function render(d) {
     [100, 'Wet Air', 't-warn']
   ]);
   
-  setTag('k-mq2-tag', mq2, [
-    [200, 'Normal', 't-ok'],
-    [400, 'Moderate', 't-warn'],
-    [1000, 'High Gas/Smoke', 't-err']
+  setTag('k-eth-tag', eth, [
+    [35, 'Normal/Fresh', 't-ok'],
+    [70, 'Elevated Ethylene', 't-warn'],
+    [100, 'Critical/Ripening', 't-err']
   ]);
 
   // Handle camera video stream changes
@@ -1019,6 +1129,34 @@ function render(d) {
   setPill('cam-pill', camOk ? 'pill-info' : 'pill-live offline',
           camOk ? 'Camera: Online' : 'Camera: Offline');
 
+  // Update Rover Control panel status
+  const statusEl = document.getElementById('rover-status');
+  const btn = document.getElementById('btn-start-rover');
+  if (statusEl && btn) {
+    if (!picoOk) {
+      statusEl.textContent = 'Pico Offline';
+      statusEl.style.color = 'var(--danger)';
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'not-allowed';
+      if (roverActive) {
+        if (roverInterval) clearInterval(roverInterval);
+        roverInterval = null;
+        roverActive = false;
+        btn.className = 'btn btn-primary btn-rover-start';
+        btn.innerHTML = '🚀 Start Rover';
+      }
+    } else {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+      if (!roverActive) {
+        statusEl.textContent = 'Ready';
+        statusEl.style.color = 'var(--success)';
+      }
+    }
+  }
+
   // Hardware Diagnostic Statuses
   set('st-pico', picoOk ? '🟢 Connected' : '🔴 Disconnected');
   set('st-mq2', mq2 != null ? '🟢 Active' : '🟡 Offline / No Data');
@@ -1029,6 +1167,7 @@ function render(d) {
   set('temp-val', temp != null ? temp + ' °C' : '—');
   set('hum-val', hum != null ? hum + ' %' : '—');
   set('mq2-val', mq2 != null ? mq2 + ' ppm' : '—');
+  set('eth-val', eth != null ? eth + ' %' : '—');
   set('ai-label', d.ai_label ?? 'scanning');
   set('ai-label-display', d.ai_label ? d.ai_label.toUpperCase() : 'SCANNING');
   set('img-count', d.images_today ?? 0);
@@ -1037,9 +1176,17 @@ function render(d) {
   setBar('hum-bar', hum, hum < 40 ? 'var(--danger)' : hum > 80 ? 'var(--warning)' : 'var(--info)');
   const mq2Pct = mq2 != null ? Math.round((mq2 / 1000) * 100) : null;
   setBar('mq2-bar', mq2Pct, mq2 < 200 ? 'var(--success)' : mq2 < 400 ? 'var(--warning)' : 'var(--danger)');
+  setBar('eth-bar', eth, eth < 35 ? 'var(--success)' : eth < 70 ? 'var(--warning)' : 'var(--danger)');
 
   // Agronomic advice
-  updateAgronomicAdvice(temp, hum, mq2, d.ai_label);
+  updateAgronomicAdvice(temp, hum, mq2, eth, d.ai_label);
+
+  // Update Llama Advice UI
+  updateLlamaUI(d.llm_advice, d.llm_loading);
+  if (!initialLlamaTriggered && d.llm_advice && d.llm_advice.includes("Click 'Refresh Llama AI Analysis'") && !d.llm_loading) {
+    initialLlamaTriggered = true;
+    triggerLlamaAdvice();
+  }
 
   // Active alerts list
   const alerts = d.alerts ?? [];
@@ -1068,7 +1215,7 @@ function render(d) {
             <div class="alert-title">${a.title}</div>
             <div class="alert-desc">${a.detail}</div>
           </div>
-          <div class="alert-time">${a.time}</div>
+          <div class="alert-time">${formatTime24h(a.time, false)}</div>
         </div>`).join('');
     }
   }
@@ -1097,21 +1244,25 @@ function updateCameraStream(isConnected) {
   }
 }
 
-function updateAgronomicAdvice(temp, hum, mq2, aiLabel) {
+function updateAgronomicAdvice(temp, hum, mq2, eth, aiLabel) {
   const moistureAdviceEl = document.getElementById('moisture-advice');
   const diseaseAdviceEl = document.getElementById('disease-advice');
   const aiAdviceEl = document.getElementById('ai-advice');
 
-  // MQ2 Gas levels calculation
+  // Ethylene levels calculation
   let moistureText = "";
-  if (mq2 == null) {
-    moistureText = "Waiting for MQ2 sensor data to evaluate ambient gas concentrations.";
-  } else if (mq2 < 200) {
-    moistureText = "🟢 <b>SAFE AIR QUALITY:</b> Gas levels are normal (< 200 ppm). Clean air environment.";
-  } else if (mq2 < 400) {
-    moistureText = "⚠️ <b>ELEVATED GASES:</b> Detected moderate gas/smoke levels (" + mq2 + " ppm). Ensure proper ventilation of the enclosure.";
+  if (eth == null) {
+    if (mq2 == null) {
+      moistureText = "Waiting for gas sensor data to evaluate ambient concentrations.";
+    } else {
+      moistureText = `Gas levels are at ${mq2} ppm. No ethylene calculation available.`;
+    }
+  } else if (eth < 35) {
+    moistureText = `🟢 <b>FRESH ENVIRONMENT:</b> Estimated Ethylene Index is normal (${eth}%). Chili crop ripening rate is optimal.`;
+  } else if (eth < 70) {
+    moistureText = `⚠️ <b>ELEVATED ETHYLENE:</b> Detected moderate ethylene concentration (${eth}%). Chili fruits might be ripening faster. Ensure good air circulation.`;
   } else {
-    moistureText = "🚨 <b>SMOKE/GAS WARNING:</b> High concentration of combustible gases or smoke detected (" + mq2 + " ppm)! Check physical environment immediately for fire hazards or gas leakage.";
+    moistureText = `🚨 <b>CRITICAL ETHYLENE LEVEL:</b> High ethylene concentration (${eth}%)! Accelerated ripening, fruit decay, or smoke detected in the area. Check crop ventilation immediately.`;
   }
   if (moistureAdviceEl) moistureAdviceEl.innerHTML = moistureText;
 
@@ -1146,7 +1297,17 @@ function updateAgronomicAdvice(temp, hum, mq2, aiLabel) {
 function downloadSnapshot() {
   const link = document.createElement('a');
   link.href = '/api/snapshot?t=' + Date.now();
-  link.download = `cili_monitor_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.jpg`;
+  
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const localTs = `${year}-${month}-${day}_${hours}_${minutes}_${seconds}`;
+  
+  link.download = `cili_monitor_${localTs}.jpg`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -1188,6 +1349,106 @@ function setPill(id, cls, text) {
   if (!el) return;
   el.className = 'pill ' + cls;
   el.innerHTML = text;
+}
+
+async function sendControlCommand(command) {
+  try {
+    const response = await fetch('/api/control', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command })
+    });
+    const result = await response.json();
+    return result;
+  } catch (e) {
+    console.error("Control API error:", e);
+    return { status: "error", message: "Failed to communicate with server" };
+  }
+}
+
+async function toggleRover() {
+  const btn = document.getElementById('btn-start-rover');
+  const statusEl = document.getElementById('rover-status');
+  if (!btn || !statusEl) return;
+  
+  if (!roverActive) {
+    // Start rover
+    const res = await sendControlCommand('forward');
+    if (res.status === 'success') {
+      roverActive = true;
+      statusEl.textContent = 'Patrolling (Moving Forward)';
+      statusEl.style.color = 'var(--success)';
+      btn.className = 'btn btn-primary btn-rover-stop';
+      btn.innerHTML = '🛑 Stop Rover';
+      
+      // Start heartbeat to keep the rover moving (safety watchdog expects commands every <2s)
+      roverInterval = setInterval(() => {
+        sendControlCommand('forward');
+      }, 1000);
+    } else {
+      alert("Failed to start rover: " + (res.message || "Unknown error"));
+    }
+  } else {
+    // Stop rover
+    if (roverInterval) {
+      clearInterval(roverInterval);
+      roverInterval = null;
+    }
+    const res = await sendControlCommand('stop');
+    roverActive = false;
+    statusEl.textContent = 'Ready';
+    statusEl.style.color = 'var(--success)';
+    btn.className = 'btn btn-primary btn-rover-start';
+    btn.innerHTML = '🚀 Start Rover';
+  }
+}
+
+let initialLlamaTriggered = false;
+
+function updateLlamaUI(advice, isLoading) {
+  const contentEl = document.getElementById('llm-advice-content');
+  const skeletonEl = document.getElementById('llm-advice-skeleton');
+  const btnEl = document.getElementById('btn-refresh-llm');
+  
+  if (!contentEl || !skeletonEl || !btnEl) return;
+  
+  if (isLoading) {
+    contentEl.style.display = 'none';
+    skeletonEl.style.display = 'flex';
+    btnEl.disabled = true;
+    btnEl.style.opacity = '0.6';
+    btnEl.style.cursor = 'not-allowed';
+    btnEl.innerHTML = '<span>🤖</span> Llama is thinking...';
+  } else {
+    skeletonEl.style.display = 'none';
+    contentEl.style.display = 'block';
+    if (advice) {
+      contentEl.innerHTML = advice;
+    }
+    btnEl.disabled = false;
+    btnEl.style.opacity = '1';
+    btnEl.style.cursor = 'pointer';
+    btnEl.innerHTML = '<span>🔄</span> Refresh Llama Analysis';
+  }
+}
+
+async function triggerLlamaAdvice() {
+  const btnEl = document.getElementById('btn-refresh-llm');
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<span>🤖</span> Llama is thinking...';
+  }
+  updateLlamaUI(null, true);
+  try {
+    const res = await fetch('/api/generate_advice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) throw new Error();
+  } catch (e) {
+    console.error("Failed to trigger Llama advice:", e);
+    updateLlamaUI("⚠️ Failed to trigger Llama advice. Please try again.", false);
+  }
 }
 
 // Start polling
