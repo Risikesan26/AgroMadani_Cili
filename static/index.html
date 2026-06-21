@@ -1199,24 +1199,24 @@
 
   <!-- Tab 2: Crop Advisory -->
   <div id="tab-advisory" class="tab-content">
-    <!-- Llama 3.2 (3B) LLM Advisor Card -->
+    <!-- Qwen 2.5 (500M) LLM Advisor Card -->
     <div class="card" style="margin-bottom: 24px; border: 1px solid rgba(27, 58, 39, 0.15); background: linear-gradient(135deg, #ffffff, #f7f9f7); box-shadow: 0 4px 20px rgba(27, 58, 39, 0.05);">
       <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-direction: row;">
         <div style="display: flex; align-items: center; gap: 12px;">
           <span style="font-size: 28px;">🤖</span>
           <div>
-            <div style="font-size: 16px; font-weight: 700; color: var(--primary);">Llama 3.2 Agronomic Advisor</div>
-            <div style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Local Edge AI (3B Quantized Model)</div>
+            <div style="font-size: 16px; font-weight: 700; color: var(--primary);">Qwen 2.5 Agronomic Advisor</div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Local Edge AI (500M Compact Model)</div>
           </div>
         </div>
-        <button id="btn-refresh-llm" class="btn btn-primary" onclick="triggerLlamaAdvice()" style="font-size: 12px; padding: 10px 16px; background-color: var(--primary); border: none; color: white; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600; transition: background 0.2s;">
-          <span>🔄</span> Refresh Llama Analysis
+        <button id="btn-refresh-llm" class="btn btn-primary" onclick="triggerQwenAdvice()" style="font-size: 12px; padding: 10px 16px; background-color: var(--primary); border: none; color: white; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600; transition: background 0.2s;">
+          <span>🔄</span> Refresh Qwen Analysis
         </button>
       </div>
       
       <div class="advice-card" style="margin-top: 16px; background: rgba(27, 58, 39, 0.03); border: 1px dashed var(--border); min-height: 80px; display: flex; flex-direction: column; justify-content: center; padding: 16px; border-radius: 12px;">
         <div id="llm-advice-content" class="advice-content" style="font-size: 14px; line-height: 1.6; color: var(--text);">
-          Click 'Refresh Llama Analysis' to generate real-time agronomic recommendations.
+          Click 'Refresh Qwen Analysis' to generate real-time agronomic recommendations.
         </div>
         <div id="llm-advice-skeleton" style="display: none; flex-direction: column; gap: 8px; width: 100%;">
           <div style="width: 100%; height: 12px; background: rgba(27, 58, 39, 0.08); border-radius: 4px; animation: pulse 1.5s infinite ease-in-out;"></div>
@@ -1677,11 +1677,11 @@ function render(d) {
   // Agronomic advice
   updateAgronomicAdvice(temp, hum, mq2, eth, d.ai_label);
 
-  // Update Llama Advice UI
-  updateLlamaUI(d.llm_advice, d.llm_loading);
-  if (!initialLlamaTriggered && d.llm_advice && d.llm_advice.includes("Click 'Refresh Llama AI Analysis'") && !d.llm_loading) {
-    initialLlamaTriggered = true;
-    triggerLlamaAdvice();
+  // Update Qwen Advice UI
+  updateQwenUI(d.llm_advice, d.llm_loading);
+  if (!initialQwenTriggered && d.llm_advice && d.llm_advice.includes("Refresh Qwen") && !d.llm_loading) {
+    initialQwenTriggered = true;
+    triggerQwenAdvice();
   }
 
   // Active alerts list
@@ -1899,9 +1899,9 @@ async function toggleRover() {
   }
 }
 
-let initialLlamaTriggered = false;
+let initialQwenTriggered = false;
 
-function updateLlamaUI(advice, isLoading) {
+function updateQwenUI(advice, isLoading) {
   const contentEl = document.getElementById('llm-advice-content');
   const skeletonEl = document.getElementById('llm-advice-skeleton');
   const btnEl = document.getElementById('btn-refresh-llm');
@@ -1914,7 +1914,7 @@ function updateLlamaUI(advice, isLoading) {
     btnEl.disabled = true;
     btnEl.style.opacity = '0.6';
     btnEl.style.cursor = 'not-allowed';
-    btnEl.innerHTML = '<span>🤖</span> Llama is thinking...';
+    btnEl.innerHTML = '<span>🤖</span> Qwen is thinking...';
   } else {
     skeletonEl.style.display = 'none';
     contentEl.style.display = 'block';
@@ -1924,17 +1924,17 @@ function updateLlamaUI(advice, isLoading) {
     btnEl.disabled = false;
     btnEl.style.opacity = '1';
     btnEl.style.cursor = 'pointer';
-    btnEl.innerHTML = '<span>🔄</span> Refresh Llama Analysis';
+    btnEl.innerHTML = '<span>🔄</span> Refresh Qwen Analysis';
   }
 }
 
-async function triggerLlamaAdvice() {
+async function triggerQwenAdvice() {
   const btnEl = document.getElementById('btn-refresh-llm');
   if (btnEl) {
     btnEl.disabled = true;
-    btnEl.innerHTML = '<span>🤖</span> Llama is thinking...';
+    btnEl.innerHTML = '<span>🤖</span> Qwen is thinking...';
   }
-  updateLlamaUI(null, true);
+  updateQwenUI(null, true);
   try {
     const res = await fetch('/api/generate_advice', {
       method: 'POST',
@@ -1942,8 +1942,8 @@ async function triggerLlamaAdvice() {
     });
     if (!res.ok) throw new Error();
   } catch (e) {
-    console.error("Failed to trigger Llama advice:", e);
-    updateLlamaUI("⚠️ Failed to trigger Llama advice. Please try again.", false);
+    console.error("Failed to trigger Qwen advice:", e);
+    updateQwenUI("⚠️ Failed to trigger Qwen advice. Please try again.", false);
   }
 }
 

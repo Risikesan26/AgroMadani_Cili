@@ -31,7 +31,7 @@ state = {
     "updated":   None,
     "pico_connected": False,
     "camera_connected": False,
-    "llm_advice": "Click 'Refresh Llama AI Analysis' to generate advisory report.",
+    "llm_advice": "Click 'Refresh Qwen AI Analysis' to generate advisory report.",
     "llm_loading": False
 }
 
@@ -310,7 +310,7 @@ def generate_llama_advice_task():
             fallback += "<li><b>Ethylene Index:</b> Ethylene concentrations are low; normal ripening patterns expected.</li>"
         fallback += "</ul>"
         
-        state["llm_advice"] = f"<div style='color: var(--text-muted); font-size: 13px; margin-bottom: 8px;'>⚠️ Local Llama 3.2 offline (using fallback diagnostics)</div>{fallback}"
+        state["llm_advice"] = f"<div style='color: var(--text-muted); font-size: 13px; margin-bottom: 8px;'>⚠️ Local Qwen 2.5 offline (using fallback diagnostics)</div>{fallback}"
     finally:
         state["llm_loading"] = False
 
@@ -343,7 +343,7 @@ def api_generate_advice():
         return jsonify({"status": "already_running"}), 409
     
     state["llm_loading"] = True
-    state["llm_advice"] = "🤖 Llama 3.2 is analyzing sensor telemetry and generating crop advisory..."
+    state["llm_advice"] = "🤖 Qwen 2.5 is analyzing sensor telemetry and generating crop advisory..."
     threading.Thread(target=generate_llama_advice_task, daemon=True).start()
     return jsonify({"status": "started"})
 
