@@ -289,7 +289,7 @@ def generate_llama_advice_task():
                 advice = advice.replace("```html", "").replace("```", "").strip()
                 state["llm_advice"] = advice
             else:
-                state["llm_advice"] = "⚠️ Ollama returned an empty response. Verify the llama3.2:3b model is installed."
+                state["llm_advice"] = f"⚠️ Ollama returned an empty response. Verify the '{OLLAMA_MODEL}' model is installed."
     except Exception as e:
         print(f"Ollama integration error: {e}")
         # Graceful fallback logic
