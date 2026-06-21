@@ -281,7 +281,7 @@ def generate_llama_advice_task():
             data=json.dumps(data).encode("utf-8"),
             headers={"Content-Type": "application/json"}
         )
-        with urllib.request.urlopen(req, timeout=10) as response:
+        with urllib.request.urlopen(req, timeout=60) as response:
             res_data = json.loads(response.read().decode("utf-8"))
             advice = res_data.get("response", "").strip()
             if advice:
