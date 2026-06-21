@@ -10,6 +10,12 @@ try:
 except Exception:
     pass
 
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:latest")
+
 app = Flask(__name__, static_folder='static')
 
 state = {
@@ -258,7 +264,7 @@ def generate_llama_advice_task():
     )
     
     data = {
-        "model": "llama3.2:latest",
+        "model": OLLAMA_MODEL,
         "prompt": prompt,
         "stream": False,
         "options": {
