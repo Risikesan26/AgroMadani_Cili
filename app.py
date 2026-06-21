@@ -258,7 +258,7 @@ def generate_llama_advice_task():
     )
     
     data = {
-        "model": "llama3.2",
+        "model": "llama3.2:latest",
         "prompt": prompt,
         "stream": False,
         "options": {
