@@ -12,7 +12,10 @@ except Exception:
 
 import os
 from dotenv import load_dotenv
-load_dotenv()
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+env_path = os.path.join(BASE_DIR, ".env")
+load_dotenv(env_path)
 
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:latest")
 
@@ -49,8 +52,12 @@ def camera_reader():
         import os
         base_dir = os.path.dirname(os.path.abspath(__file__))
         
-        # Try finding the model in 'models/' folder, then fall back to root folder
-        model_path = os.path.join(base_dir, "models", "best_openvino_model")
+        # Try finding the model at the user-specified absolute path, then fall back to local folders
+        model_path = "/home/dnarrayana/agromadani/models/weights/openvino_model/best_openvino_model"
+        if not os.path.exists(model_path):
+            model_path = os.path.join(base_dir, "models", "Chili_Disease_Detection", "weights", "openvino_model", "best_openvino_model")
+        if not os.path.exists(model_path):
+            model_path = os.path.join(base_dir, "models", "best_openvino_model")
         if not os.path.exists(model_path):
             model_path = os.path.join(base_dir, "best_openvino_model")
             
@@ -95,7 +102,7 @@ def camera_reader():
         # Run YOLO inference
         if yolo_model is not None:
             try:
-                results = yolo_model(frame, imgsz=320, verbose=False)
+                results = yolo_model(frame, verbose=False)
                 if results and len(results) > 0:
                     result = results[0]
                     # Draw bounding boxes and labels on frame
@@ -136,8 +143,9 @@ def camera_reader():
                         state["ai_label"] = "healthy"
                         state["ai_conf"] = 100
             except Exception as inference_err:
-                print(f"⚠️ YOLO inference error: {inference_err}")
-                state["ai_label"] = "inference error"
+                err_str = str(inference_err)
+                print(f"⚠️ YOLO inference error: {err_str}")
+                state["ai_label"] = f"Error: {err_str[:25]}" # Show first 25 chars of error on dashboard
 
         ret_jpeg, jpeg = cv2.imencode('.jpg', frame)
         if ret_jpeg:
@@ -203,6 +211,21 @@ def find_pico_port():
 
 def pico_reader():
     global pico_serial
+    if os.environ.get("MOCK_PICO") == "true":
+        print("💡 running in MOCK PICO mode")
+        state["pico_connected"] = True
+        while True:
+            mock_data = {
+                "temp": 28.5,
+                "humidity": 68.0,
+                "mq2_raw": 3200,
+                "mq2": 150,
+                "ethylene_index": 12.0
+            }
+            state.update(mock_data)
+            state["updated"] = datetime.now(timezone.utc).isoformat()
+            time.sleep(2)
+
     while True:
         port = find_pico_port()
         try:
@@ -356,16 +379,19 @@ def api_control():
         if not command:
             return jsonify({"status": "error", "message": "No command provided"}), 400
         
-        valid_commands = ["forward", "stop"]
+        valid_commands = ["forward", "backward", "left", "right", "stop"]
         if command not in valid_commands:
             return jsonify({"status": "error", "message": f"Invalid command: {command}"}), 400
             
-        if not state.get("pico_connected") or pico_serial is None:
+        if not state.get("pico_connected") or (pico_serial is None and os.environ.get("MOCK_PICO") != "true"):
             return jsonify({"status": "error", "message": "Pico is not connected"}), 503
             
-        with pico_serial_lock:
-            pico_serial.write(f"{command}\n".encode("utf-8"))
-            pico_serial.flush()
+        if os.environ.get("MOCK_PICO") == "true":
+            print(f"[MOCK] Serial Write: {command}")
+        else:
+            with pico_serial_lock:
+                pico_serial.write(f"{command}\n".encode("utf-8"))
+                pico_serial.flush()
             
         return jsonify({"status": "success", "command": command})
     except Exception as e:
